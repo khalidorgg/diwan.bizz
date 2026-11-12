@@ -76,7 +76,7 @@ async def build(pg, p):
             await pg.evaluate(f'document.getAnimations().forEach(a=>a.currentTime={t})')
             last=fr/f'{k:05d}.jpg'; await pg.screenshot(path=str(last), type='jpeg', quality=90); k+=1
     T=k/FPS; off=int(hashlib.md5(p['id'].encode()).hexdigest(),16)%max(1,int(AUDIO_LEN-T-5))+2
-    out=OUT/f'{p["id"]}.mp4'
+    out=OUT/f'.tmp_{p["id"]}.mp4'
     subprocess.run(['ffmpeg','-y','-loglevel','error','-framerate',str(FPS),'-i',str(fr/'%05d.jpg'),
         '-f','lavfi','-i','color=c=0xA8894A:s=1080x14:r=24',
         '-ss',str(off),'-i',str(AUDIO),
@@ -84,7 +84,7 @@ async def build(pg, p):
         '-map','[v]','-map','2:a','-t',f'{T:.2f}',
         '-af',f'volume=0.9,afade=t=in:st=0:d=0.4,afade=t=out:st={T-1.2:.2f}:d=1.2',
         '-c:v','libx264','-preset','veryfast','-pix_fmt','yuv420p','-crf','21','-movflags','+faststart','-c:a','aac','-b:a','160k',str(out)],check=True)
-    shutil.copy(fr/'00000.jpg', OUT/f'{p["id"]}-cover.jpg'); shutil.rmtree(fr); tmp.unlink()
+    os.replace(out, OUT/f'{p["id"]}.mp4'); out=OUT/f'{p["id"]}.mp4'; shutil.copy(fr/'00000.jpg', OUT/f'.tmp_{p["id"]}-cover.jpg'); os.replace(OUT/f'.tmp_{p["id"]}-cover.jpg', OUT/f'{p["id"]}-cover.jpg'); shutil.rmtree(fr); tmp.unlink()
     return out, round(T,1)
 async def main(ids):
     P={}
